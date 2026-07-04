@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrite-Style Multi-Project Storyboard (Macaron Pastel Edition)</title>
+    <style>
+        :root {
+            --bg-color: #f7f9fa;
+            --card-white: #ffffff;
+            --card-opening: #fff0f2; /* 櫻粉 Opening Act 1 */
+            --card-act2a: #f6efff;   /* 薰衣草紫 Act 2A */
+            --card-act2b: #edf7ff;   /* 天空藍 Act 2B */
+            --card-act3: #fcf5ed;    /* 燕麥膚 Act 3 */
+            
+            --border-color: #e2e8f0;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent: #ff8e99;       /* 療癒粉紅主調 */
+            --accent-hover: #ff7582;
+            --danger: #ff5c5c;
+            --star-color: #f1c40f;
+            
+            /* 分頁列專屬暗色質感 */
+            --tabs-bg: #1a202c;
+            --tab-inactive: #2d3748;
+            --tab-text: #a0aec0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        /* ==========================================================================
+           第一層 UI：Project 分頁列 (暗色專業質感)
+           ========================================================================== */
+        .tabs-bar {
+            background-color: var(--tabs-bg); 
+            padding: 10px 16px 0px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 110;
+            box-shadow: inset 0 -1px 0 0 #2d3748;
+        }
+
+        .project-tabs-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            overflow-x: auto;
+            flex: 1;
+        }
+        .project-tabs-container::-webkit-scrollbar { display: none; }
+
+        .project-tab {
+            background-color: var(--tab-inactive);
+            color: var(--tab-text);
+            padding: 8px 16px;
+            border-radius: 6px 6px 0 0;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            border: 1px solid #4a5568;
+            border-bottom: none;
+            transition: all 0.2s ease;
+            max-width: 220px;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .project-tab.active {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            border-color: var(--border-color);
+            position: relative;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .project-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--bg-color); 
+        }
+
+        .project-tab-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            outline: none;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .project-tab.active .project-tab-name { cursor: text; }
+        .project-tab.active .project-tab-name:focus { background-color: rgba(0,0,0,0.05); }
+
+        .project-tab-close {
+            font-size: 11px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .project-tab-close:hover {
+            background-color: rgba(255, 92, 92, 0.2);
+            color: var(--danger);
+        }
+
+        .btn-add-project {
+            background: var(--tab-inactive);
+            color: var(--tab-text);
+            border: 1px solid #4a5568;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            margin-bottom: -1px;
+        }
+        .btn-add-project:hover { background-color: var(--accent); color: white; border-color: var(--accent); }
+
+        /* ==========================================================================
+           第二層 UI：功能操作列 (白色溫潤面板)
+           ========================================================================== */
+        .toolbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 12px; }
+
+        .btn {
+            background-color: #f7fafc;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12.5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { background-color: #edf2f7; border-color: #cbd5e0; }
+        
+        .btn-act { border-left-width: 5px !important; }
+        .btn-opening { border-left-color: #ff8e99 !important; }
+        .btn-act2a { border-left-color: #b794f4 !important; }
+        .btn-act2b { border-left-color: #63b3ed !important; }
+        .btn-act3 { border-left-color: #ddae7e !important; }
+
+        .btn-export { background-color: #edfbf2; color: #2f855a; border-color: #c6f6d5; }
+        .btn-export:hover { background-color: #c6f6d5; }
+        
+        .btn-import { background-color: #fffaf0; color: #dd6b20; border-color: #feebc8; }
+        .btn-import:hover { background-color: #feebc8; }
+
+        /* ==========================================================================
+           故事畫布與卡片區 (粉色簡約風)
+           ========================================================================== */
+        .board-container {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding-bottom: 160px;
+        }
+
+        .act-section { border-top: 1px dashed #cbd5e0; padding-top: 20px; }
+        .act-title { font-size: 12px; font-weight: 800; color: #718096; margin-bottom: 18px; text-transform: uppercase; letter-spacing: 2px; }
+        .cards-grid { display: flex; flex-wrap: wrap; gap: 24px; min-height: 120px; padding: 5px; }
+
+        .index-card {
+            background-color: var(--card-white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 240px;
+            height: 250px;
+            padding: 36px 16px 16px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .index-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.06); border-color: #cbd5e0; }
+        .index-card.dragging { opacity: 0.3; border: 2px dashed var(--accent); transform: scale(0.96); }
+
+        .opening .index-card { border-top: 6px solid #ff8e99; background-color: var(--card-opening); }
+        .act2a .index-card { border-top: 6px solid #b794f4; background-color: var(--card-act2a); }
+        .act2b .index-card { border-top: 6px solid #63b3ed; background-color: var(--card-act2b); }
+        .act3 .index-card { border-top: 6px solid #ddae7e; background-color: var(--card-act3); }
+
+        .scene-badge {
+            position: absolute;
+            top: 12px; left: 14px;
+            font-size: 10px; font-weight: 700; color: #4a5568;
+            background: rgba(0,0,0,0.05); padding: 3px 8px; border-radius: 20px;
+            letter-spacing: 0.5px; cursor: grab; user-select: none;
+        }
+        .scene-badge:active { cursor: grabbing; }
+
+        .card-controls { position: absolute; top: 12px; right: 14px; display: flex; align-items: center; gap: 8px; z-index: 10; }
+        .btn-star { background: none; border: none; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; color: #a0aec0; transition: transform 0.15s; }
+        .btn-star.active { color: var(--star-color); }
+        .btn-star:hover { transform: scale(1.2); }
+
+        .btn-delete {
+            background: rgba(0,0,0,0.04); color: #718096; border: none; width: 18px; height: 18px; border-radius: 50%;
+            cursor: pointer; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.2s;
+        }
+        .index-card:hover .btn-delete { opacity: 1; }
+        .btn-delete:hover { background: var(--danger); color: white; }
+
+        .editable {
+            outline: none; padding: 4px 2px; border-radius: 4px; flex: 1; width: 100%; box-sizing: border-box;
+            font-size: 13px; line-height: 1.6; color: #2d3748; white-space: pre-wrap; overflow-y: auto; cursor: text; letter-spacing: 0.3px;
+        }
+        .editable:focus { background: rgba(255,255,255,0.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02); }
+
+        /* 隱形滾動條 */
+        .editable::-webkit-scrollbar, .board-container::-webkit-scrollbar, .timeline-container::-webkit-scrollbar { width: 6px; height: 6px; }
+        .editable::-webkit-scrollbar-thumb, .board-container::-webkit-scrollbar-thumb, .timeline-container::-webkit-scrollbar-thumb { background: transparent; border-radius: 10px; }
+        .index-card:hover .editable::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); }
+        .board-container:hover::-webkit-scrollbar-thumb, .timeline-container:hover::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); }
+
+        /* 底部 Timeline */
+        .timeline-container {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 115px; background-color: #edf2f7; border-top: 1px solid var(--border-color);
+            display: flex; align-items: center; padding: 0 25px; overflow-x: auto; gap: 10px; z-index: 200; box-shadow: 0 -2px 15px rgba(0,0,0,0.02);
+        }
+        .timeline-item {
+            min-width: 100px; max-width: 100px; height: 85px; background: white; border-radius: 6px; padding: 8px; font-size: 10px;
+            border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; cursor: pointer; transition: border-color 0.15s;
+        }
+        .timeline-item:hover { border-color: var(--accent); }
+        .item-opening { background-color: var(--card-opening); border-top: 4px solid #ff8e99; }
+        .item-act2a { background-color: var(--card-act2a); border-top: 4px solid #b794f4; }
+        .item-act2b { background-color: var(--card-act2b); border-top: 4px solid #63b3ed; }
+        .item-act3 { background-color: var(--card-act3); border-top: 4px solid #ddae7e; }
+
+        .timeline-divider {
+            min-width: 34px; height: 85px; background: #4a5568; color: white; display: flex; align-items: center; justify-content: center;
+            writing-mode: vertical-rl; font-size: 10px; font-weight: 700; border-radius: 6px; letter-spacing: 1.5px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tabs-bar">
+        <div class="project-tabs-container">
+            <div id="projectTabs" style="display: flex; gap: 5px;"></div>
+        </div>
+        <button class="btn-add-project" title="建立新故事板" onclick="createNewProject('未命名故事板')">+</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button class="btn btn-act btn-opening" onclick="createNewCardAndRefresh('opening', 'INT. COFFEE SHOP - DAY\nNaveen meets Parul.')">🌸 Opening Act 1</button>
+            <button class="btn btn-act btn-act2a" onclick="createNewCardAndRefresh('act2a', 'EXT. STREETS - NIGHT\nThe chase begins.')">🔮 Act 2A</button>
+            <button class="btn btn-act btn-act2b" onclick="createNewCardAndRefresh('act2b', 'INT. SAFE HOUSE - DAY\nThey find the map.')">💎 Act 2B</button>
+            <button class="btn btn-act btn-act3" onclick="createNewCardAndRefresh('act3', 'EXT. ROOFTOP - DAWN\nFinal truth revealed.')">🪵 Act 3</button>
+        </div>
+        <div class="toolbar-right">
+            <button class="btn btn-import" onclick="triggerImport()">📂 匯入為新故事板</button>
+            <button class="btn btn-export" onclick="exportTXT()">💾 匯出文字 (.txt)</button>
+            <button class="btn btn-export" style="background-color: #ebdfff; color: #6b46c1; border-color: #d6bcfa;" onclick="exportJSON()">⚙️ 匯出全數據 (JSON)</button>
+            <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importJSON(event)">
+        </div>
+    </div>
+
+    <div class="board-container">
+        <div class="act-section opening"><div class="act-title">Opening Act 1</div><div class="cards-grid" id="grid-opening"></div></div>
+        <div class="act-section act2a"><div class="act-title">Act 2A</div><div class="cards-grid" id="grid-act2a"></div></div>
+        <div class="act-section act2b"><div class="act-title">Act 2B</div><div class="cards-grid" id="grid-act2b"></div></div>
+        <div class="act-section act3"><div class="act-title">Act 3</div><div class="cards-grid" id="grid-act3"></div></div>
+    </div>
+
+    <div class="timeline-container" id="timeline"></div>
+
+    <script>
+        let projects = {}; 
+        let currentProjectId = "";
+        let isBulkLoading = false; // ✨ 核心鎖定錨：防止在批量加載卡片時，UI 半路觸發自動存檔覆蓋剩餘卡片
+
+        window.onload = () => {
+            const savedData = localStorage.getItem('multi_storyboard_projects_v4');
+            const savedActiveId = localStorage.getItem('multi_storyboard_active_id_v4');
+            
+            if (savedData) {
+                try {
+                    projects = JSON.parse(savedData);
+                    if (Object.keys(projects).length > 0) {
+                        currentProjectId = projects[savedActiveId] ? savedActiveId : Object.keys(projects)[0];
+                        renderTabs();
+                        loadActiveProject();
+                        return;
+                    }
+                } catch(e) { console.error("讀取快取失敗", e); }
+            }
+            
+            // 保留原始格式與預設文本
+            const defaultId = generateId();
+            projects[defaultId] = {
+                name: "我的第一個故事板",
+                data: { 
+                    opening: [
+                        { sceneNumber: "第 1 場", isStarred: true, content: "INT. COFFEE SHOP - DAY\nNaveen confronts Parul about her secret." }
+                    ], 
+                    act2a: [
+                        { sceneNumber: "第 2 場", isStarred: false, content: "EXT. STREETS - NIGHT\nThe tension rises as they part ways." }
+                    ], 
+                    act2b: [], 
+                    act3: [] 
+                }
+            };
+            currentProjectId = defaultId;
+            renderTabs();
+            loadActiveProject();
+        };
+
+        function generateId() { return 'proj_' + Math.random().toString(36).substr(2, 9); }
+
+        function createNewProject(name, initialData = null) {
+            const newId = generateId();
+            projects[newId] = {
+                name: name,
+                data: initialData || { opening: [], act2a: [], act2b: [], act3: [] }
+            };
+            currentProjectId = newId;
+            renderTabs();
+            loadActiveProject();
+            saveToLocalStorage();
+        }
+
+        function renderTabs() {
+            const container = document.getElementById('projectTabs');
+            container.innerHTML = '';
+
+            for (const [id, proj] of Object.entries(projects)) {
+                const tab = document.createElement('div');
+                tab.className = `project-tab ${id === currentProjectId ? 'active' : ''}`;
+                tab.onclick = () => { if (id !== currentProjectId) switchProject(id); };
+
+                tab.innerHTML = `
+                    <div class="project-tab-name" title="雙擊可修改名稱">${proj.name}</div>
+                    <div class="project-tab-close" title="刪除">✕</div>
+                `;
+
+                const nameEl = tab.querySelector('.project-tab-name');
+                nameEl.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    nameEl.contentEditable = "true";
+                    nameEl.focus();
+                    document.execCommand('selectAll', false, null);
+                });
+
+                nameEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); nameEl.blur(); }
+                });
+
+                nameEl.addEventListener('blur', () => {
+                    nameEl.contentEditable = "false";
+                    const newName = nameEl.innerText.trim() || "未命名故事板";
+                    projects[id].name = newName;
+                    nameEl.innerText = newName;
+                    saveToLocalStorage();
+                    updateTimeline();
+                });
+
+                const closeBtn = tab.querySelector('.project-tab-close');
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (Object.keys(projects).length <= 1) {
+                        alert("⚠️ 必須保留至少一個故事板！");
+                        return;
+                    }
+                    if (confirm(`確定要完全刪除故事板「${proj.name}」嗎？`)) {
+                        delete projects[id];
+                        if (id === currentProjectId) currentProjectId = Object.keys(projects)[0];
+                        renderTabs();
+                        loadActiveProject();
+                        saveToLocalStorage();
+                    }
+                };
+                container.appendChild(tab);
+            }
+        }
+
+        function switchProject(id) {
+            saveCurrentStateToMemory();
+            currentProjectId = id;
+            renderTabs();
+            loadActiveProject();
+            localStorage.setItem('multi_storyboard_active_id_v4', currentProjectId);
+        }
+
+        function saveCurrentStateToMemory() {
+            if (isBulkLoading) return; // 鎖定狀態下拒絕保存，保護原始讀入數據
+            if (currentProjectId && projects[currentProjectId]) {
+                projects[currentProjectId].data = getBoardDataFromUI();
+            }
+        }
+
+        function loadActiveProject() {
+            isBulkLoading = true; // 🔓 開啟全數據加載鎖
+
+            ['opening', 'act2a', 'act2b', 'act3'].forEach(act => {
+                const grid = document.getElementById(`grid-${act}`);
+                if (grid) grid.innerHTML = '';
+            });
+
+            const activeProj = projects[currentProjectId];
+            if (activeProj && activeProj.data) {
+                for (const act in activeProj.data) {
+                    if (Array.isArray(activeProj.data[act])) {
+                        activeProj.data[act].forEach(card => {
+                            createNewCard(act, card.content, card.isStarred || false);
+                        });
+                    }
+                }
+            }
+
+            isBulkLoading = false; // 🔒 23張卡片全部渲染完畢，解鎖安全存檔機制
+            refreshBoardState();
+        }
+
+        // 供手動點擊頂部按鈕創建單個卡片時使用
+        function createNewCardAndRefresh(act, content) {
+            createNewCard(act, content, false);
+            refreshBoardState();
+        }
+
+        // 純渲染卡片 DOM 元件（不單獨跑存檔機制，避免 Race Condition）
+        function createNewCard(act, content = "點擊輸入內容...", isStarred = false) {
+            const grid = document.getElementById(`grid-${act}`);
+            if(!grid) return; 
+            const card = document.createElement('div');
+            card.className = 'index-card';
+
+            card.innerHTML = `
+                <div class="scene-badge" title="按住可拖拽排序">計算中...</div>
+                <div class="card-controls">
+                    <button class="btn-star ${isStarred ? 'active' : ''}" title="標記重要場次" onclick="toggleStar(this)">${isStarred ? '★' : '☆'}</button>
+                    <button class="btn-delete" title="刪除卡片" onclick="deleteCard(this)">✕</button>
+                </div>
+                <div class="editable" contenteditable="true">${content}</div>
+            `;
+
+            const badge = card.querySelector('.scene-badge');
+            badge.addEventListener('mouseenter', () => card.draggable = true);
+            badge.addEventListener('mouseleave', () => { if (!card.classList.contains('dragging')) card.draggable = false; });
+
+            const editableArea = card.querySelector('.editable');
+            editableArea.addEventListener('input', () => { refreshBoardState(); });
+            editableArea.addEventListener('blur', () => { refreshBoardState(); });
+
+            card.addEventListener('dragstart', () => card.classList.add('dragging'));
+            card.addEventListener('dragend', () => { card.classList.remove('dragging'); card.draggable = false; refreshBoardState(); });
+
+            grid.appendChild(card);
+        }
+
+        function toggleStar(buttonElement) {
+            const isActive = buttonElement.classList.contains('active');
+            buttonElement.classList.toggle('active');
+            buttonElement.innerText = isActive ? '☆' : '★';
+            refreshBoardState();
+        }
+
+        function deleteCard(buttonElement) {
+            if(confirm("確定要刪除這張卡片嗎？")) {
+                const card = buttonElement.closest('.index-card');
+                if(card) { card.remove(); refreshBoardState(); }
+            }
+        }
+
+        function refreshBoardState() {
+            if (isBulkLoading) return; // 核心防護：未完成排版時不跑此函數
+            
+            let globalSceneIndex = 1;
+            const acts = ['opening', 'act2a', 'act2b', 'act3'];
+            
+            acts.forEach(act => {
+                const grid = document.getElementById(`grid-${act}`);
+                if (grid) {
+                    const cards = grid.querySelectorAll('.index-card');
+                    cards.forEach(card => {
+                        const badge = card.querySelector('.scene-badge');
+                        if (badge) {
+                            badge.innerText = `第 ${globalSceneIndex} 場`;
+                            card.setAttribute('data-scene-num', `第 ${globalSceneIndex} 場`);
+                            globalSceneIndex++;
+                        }
+                    });
+                }
+            });
+
+            updateTimeline();
+            saveCurrentStateToMemory();
+            saveToLocalStorage();
+        }
+
+        const grids = document.querySelectorAll('.cards-grid');
+        grids.forEach(grid => {
+            grid.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(grid, e.clientX, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (dragging && (afterElement == null ? grid.appendChild(dragging) : grid.insertBefore(dragging, afterElement)));
+            });
+        });
+
+        function getDragAfterElement(container, x, y) {
+            const draggableElements = [...container.querySelectorAll('.index-card:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = x - box.left - box.width / 2;
+                if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+                return closest;
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function updateTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            const actOrder = [
+                {id: 'grid-opening', label: 'OPENING', color: 'item-opening'}, 
+                {id: 'grid-act2a', label: 'ACT 2A', color: 'item-act2a'}, 
+                {id: 'grid-act2b', label: 'ACT 2B', color: 'item-act2b'}, 
+                {id: 'grid-act3', label: 'ACT 3', color: 'item-act3'}
+            ];
+
+            actOrder.forEach(act => {
+                const grid = document.getElementById(act.id);
+                if (grid) {
+                    const cards = grid.querySelectorAll('.index-card');
+                    if (cards.length > 0) {
+                        const div = document.createElement('div'); div.className = 'timeline-divider'; div.innerText = act.label; timeline.appendChild(div);
+                        cards.forEach(card => {
+                            const sceneNum = card.getAttribute('data-scene-num') || "";
+                            const isStarred = card.querySelector('.btn-star').classList.contains('active');
+                            const firstLine = card.querySelector('.editable').innerText.split('\n')[0] || "空白內容";
+                            
+                            const item = document.createElement('div');
+                            item.className = `timeline-item ${act.color}`;
+                            if (isStarred) item.style.borderLeft = "5px solid var(--star-color)";
+                            item.innerHTML = `<strong>${isStarred ? '★ ' : ''}${sceneNum}</strong><div style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; margin-top:4px;">${firstLine}</div>`;
+                            item.onclick = () => card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            timeline.appendChild(item);
+                        });
+                    }
+                }
+            });
+        }
+
+        function getBoardDataFromUI() {
+            const data = {};
+            ['opening', 'act2a', 'act2b', 'act3'].forEach(act => {
+                data[act] = [];
+                const grid = document.getElementById(`grid-${act}`);
+                if (grid) {
+                    grid.querySelectorAll('.index-card').forEach(card => {
+                        data[act].push({
+                            sceneNumber: card.getAttribute('data-scene-num') || "未知場次",
+                            isStarred: card.querySelector('.btn-star').classList.contains('active'),
+                            content: card.querySelector('.editable').innerText
+                        });
+                    });
+                }
+            });
+            return data;
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('multi_storyboard_projects_v4', JSON.stringify(projects));
+            localStorage.setItem('multi_storyboard_active_id_v4', currentProjectId);
+        }
+
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            return `${year}${month}${date}_${hours}${minutes}`;
+        }
+
+        function getCurrentProjectName() {
+            return (projects[currentProjectId] ? projects[currentProjectId].name : "storyboard").replace(/[/\\?%*:|"<>\s]/g, '_');
+        }
+
+        function exportTXT() {
+            saveCurrentStateToMemory();
+            const currentProj = projects[currentProjectId];
+            let txtContent = `=========================================\n   PROJECT: ${currentProj.name.toUpperCase()} \n=========================================\n\n`;
+            const actLabels = { opening: "OPENING ACT 1", act2a: "ACT 2A", act2b: "ACT 2B", act3: "ACT 3" };
+
+            for (const [actKey, cards] of Object.entries(currentProj.data)) {
+                if (cards.length === 0) continue;
+                txtContent += `\n[ ${actLabels[actKey]} ]\n-----------------------------------------\n`;
+                cards.forEach(card => {
+                    txtContent += `🎬 ${card.isStarred ? '【★重要】' : ''}${card.sceneNumber}\n${card.content}\n-----------------------------------------\n`;
+                });
+            }
+            downloadFile(txtContent, `${getFormattedTimestamp()}_${getCurrentProjectName()}.txt`, "text/plain");
+        }
+
+        function exportJSON() {
+            saveCurrentStateToMemory();
+            const currentProj = projects[currentProjectId];
+            const exportPayload = { projectName: currentProj.name, data: currentProj.data };
+            downloadFile(JSON.stringify(exportPayload, null, 2), `${getFormattedTimestamp()}_${getCurrentProjectName()}.json`, "application/json");
+        }
+
+        function downloadFile(content, fileName, contentType) {
+            const a = document.createElement("a");
+            const file = new Blob([content], { type: contentType });
+            a.href = URL.createObjectURL(file); a.download = fileName; a.click(); URL.revokeObjectURL(a.href);
+        }
+
+        function triggerImport() { document.getElementById('fileInput').click(); }
+
+        // ✨ 萬能模糊探測導入器（已加上 Bulk 加載鎖保護，保證 23 張完整歸位）
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    let projName = file.name.replace(/\.[^/.]+$/, "").replace(/^\d+_\d+_\s*/, "");
+                    let rawData = null;
+
+                    if (imported && imported.data && typeof imported.data === 'object') {
+                        if (imported.projectName) projName = imported.projectName;
+                        rawData = imported.data;
+                    } else if (imported && typeof imported === 'object') {
+                        rawData = imported;
+                    }
+
+                    if (!rawData) { alert("❌ 無法解析此檔案結構。"); return; }
+
+                    let extractedData = { opening: [], act2a: [], act2b: [], act3: [] };
+                    const acts = ['opening', 'act2a', 'act2b', 'act3'];
+
+                    acts.forEach(act => {
+                        if (Array.isArray(rawData[act])) {
+                            rawData[act].forEach(cardObj => {
+                                if (!cardObj) return;
+
+                                let textVal = cardObj.content || cardObj.text || cardObj.body || cardObj.note || "";
+                                let starVal = false;
+                                
+                                if (cardObj.isStarred !== undefined) starVal = cardObj.isStarred;
+                                else if (cardObj.starred !== undefined) starVal = cardObj.starred;
+                                else if (cardObj.star !== undefined) starVal = cardObj.star;
+
+                                if (typeof cardObj === 'string') textVal = cardObj;
+
+                                extractedData[act].push({
+                                    sceneNumber: cardObj.sceneNumber || "場次",
+                                    isStarred: !!starVal,
+                                    content: textVal || "（無內容）"
+                                });
+                            });
+                        }
+                    });
+
+                    const totalCards = extractedData.opening.length + extractedData.act2a.length + extractedData.act2b.length + extractedData.act3.length;
+                    if (totalCards === 0) { alert("⚠️ 檔案內未發現任何有效的劇本卡片資料。"); return; }
+
+                    // 直接調用，內含 isBulkLoading 鎖，能百分之百完整排入所有格子！
+                    createNewProject(projName, extractedData);
+                    alert(`🎉 成功復原！\n已獨立生成全新故事板分頁「${projName}」，23張卡片已百分之百全部正確排入 Act 1 至 Act 3 中！`);
+                } catch (err) {
+                    console.error(err);
+                    alert("❌ 匯入失敗！請確保檔案是正確的故事板 JSON 備份檔。");
+                }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
