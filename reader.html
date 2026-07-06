@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Kobo 畫線筆記提取器</title>
+    <!-- 引入 sql.js WebAssembly 版本 -->
+    <script src="https://cloudflare.com"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .note-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .book-title { font-weight: bold; color: #333; }
+        .text { color: #555; font-style: italic; margin: 10px 0; border-left: 3px solid #007acc; padding-left: 10px; }
+        .user-note { color: #d32f2f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h2>Kobo 畫線筆記提取器</h2>
+    <p>請選擇您的 <code>KoboReader.sqlite</code> 檔案（純前端解析，資料不會上傳）：</p>
+    <input type="file" id="dir" accept=".sqlite" />
+    <hr>
+    <div id="output"></div>
+
+    <script>
+        // 初始化 sql.js
+        const config = { locateFile: filename => `https://cloudflare.com{filename}` };
+        let SQL;
+        initSqlJs(config).then(js => { SQL = js; });
+
+        document.getElementById('dir').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function() {
+                const Uints = new Uint8Array(reader.result);
+                try {
+                    // 載入資料庫
+                    const db = new SQL.Database(Uints);
+                    
+                    // SQL 查詢：結合書本資訊 (content) 與 劃線書籤 (bookmark)
+                    const query = `
+                        SELECT 
+                            c.Title, 
+                            b.Text, 
+                            b.Annotation, 
+                            b.DateCreated 
+                        FROM bookmark b
+                        JOIN content c ON b.VolumeID = c.ContentID
+                        WHERE b.Text IS NOT NULL
+                        ORDER BY b.DateCreated DESC
+                    `;
+                    
+                    const res = db.exec(query);
+                    displayNotes(res);
+                } catch (err) {
+                    alert("檔案解析失敗，請確保這是正確的 KoboReader.sqlite 檔案。");
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function displayNotes(res) {
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            if (res.length === 0) {
+                output.innerHTML = '<p>找不到任何畫線或筆記。</p>';
+                return;
+            }
+
+            const columns = res[0].columns;
+            const values = res[0].values;
+
+            values.forEach(row => {
+                const title = row[0];
+                const text = row[1];
+                const annotation = row[2]; // 用戶自己寫的筆記
+                const date = new Date(row[3]).toLocaleString();
+
+                let html = `
+                    <div class="note-card">
+                        <div class="book-title">📖 ${title}</div>
+                        <div class="text">「${text}」</div>
+                `;
+                
+                if (annotation) {
+                    html += `<div class="user-note">✍️ 筆記：${annotation}</div>`;
+                }
+                
+                html += `<small style="color:#999;">劃線時間：${date}</small></div>`;
+                output.innerHTML += html;
+            });
+        }
+    </script>
+</body>
+</html>
